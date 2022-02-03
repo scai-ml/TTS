@@ -396,6 +396,8 @@ class Vits(BaseTTS):
 
         if self.speaker_manager:
             self.num_speakers = self.speaker_manager.num_speakers
+            self.args.num_speakers = self.speaker_manager.num_speakers
+            self.config.num_speakers = self.speaker_manager.num_speakers
 
         if self.args.use_speaker_embedding:
             self._init_speaker_embedding()
@@ -990,9 +992,9 @@ class Vits(BaseTTS):
         _pad = config.characters["pad"]
         _punctuations = config.characters["punctuations"]
         _letters = config.characters["characters"]
-        _letters_ipa = config.characters["phonemes"]
         symbols = [_pad] + list(_punctuations) + list(_letters)
         if config.use_phonemes:
+            _letters_ipa = config.characters["phonemes"]
             symbols += list(_letters_ipa)
         return symbols
 

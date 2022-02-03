@@ -162,6 +162,12 @@ class VitsConfig(BaseTTSConfig):
     d_vector_dim: int = None
 
     def __post_init__(self):
+        # speaker embedding settings
+        if self.use_speaker_embedding:
+            self.model_args.use_speaker_embedding = True
+        if self.speakers_file:
+            self.model_args.speakers_file = self.speakers_file
+
         for key, val in self.model_args.items():
             if hasattr(self, key):
                 self[key] = val
