@@ -1,7 +1,7 @@
 import os
 
 from TTS.config.shared_configs import BaseAudioConfig
-from TTS.trainer import Trainer
+from TTS.trainer import Trainer, TrainingArgs
 from TTS.tts.configs.shared_configs import BaseDatasetConfig, CharactersConfig
 from TTS.tts.configs.vits_config import VitsConfig
 from TTS.tts.datasets import load_tts_samples
@@ -12,12 +12,12 @@ from TTS.tts.utils.speakers import SpeakerManager
 RESUME_EPOCH = -1
 output_path = "/mnt/FastData/dl_workspace/ws_other/voxbox/checkpoints/"
 wavs_fld = "/mnt/FastData/dl_workspace/ws_other/voxbox/datasets/resampled/ds_v2/"
-transcripts_fld = "/mnt/FastData/dl_workspace/ws_other/voxbox/datasets/transcripts/ds_v1_dla"
+transcripts_fld = "/mnt/FastData/dl_workspace/ws_other/voxbox/datasets/transcripts/ds_v2_dla"
 
 speakers_config_path = "/mnt/FastData/dl_workspace/ws_other/voxbox/datasets/speakers_config.json"
 dataset_config = BaseDatasetConfig(
     name="voxbox",
-    meta_file_train=f"{transcripts_fld}/metadata_train.txt",
+    meta_file_train=f"{transcripts_fld}/transcripts_train_sampleds.txt",
     meta_file_val=f"{transcripts_fld}/metadata_test.txt",
     path=wavs_fld, language="ro"
 )
@@ -30,7 +30,7 @@ audio_config = BaseAudioConfig(
     ref_level_db=20,
     log_func="np.log",
     do_trim_silence=True,
-    trim_db=20,
+    trim_db=23.0,
     mel_fmin=0,
     mel_fmax=None,
     spec_gain=1.0,
@@ -41,10 +41,10 @@ audio_config = BaseAudioConfig(
 config = VitsConfig(
     audio=audio_config,
     run_name="vits_voxbox",
-    batch_size=8,
-    eval_batch_size=8,
-    batch_group_size=6,
-    num_loader_workers=4,
+    batch_size=10,
+    eval_batch_size=12,
+    batch_group_size=5,
+    num_loader_workers=6,
     num_eval_loader_workers=2,
     run_eval=True,
     test_delay_epochs=-1,
@@ -57,16 +57,16 @@ config = VitsConfig(
     print_step=25,
     save_step=1000,
     keep_after=1000,
-    lr_gen=0.0002,
+    lr_gen=0.000001,
     lr_scheduler_gen_params={'gamma': 0.999875, "last_epoch": RESUME_EPOCH},
-    lr_disc=0.0002,
+    lr_disc=0.000001,
     lr_scheduler_disc_params={'gamma': 0.999875, "last_epoch": RESUME_EPOCH},
     speakers_file=speakers_config_path,
     use_speaker_embedding=True,
     print_eval=True,
     mixed_precision=True,
-    min_seq_len=1600,
-    max_seq_len=350000,
+    min_seq_len=14000,
+    max_seq_len=180000,
     output_path=output_path,
     datasets=[dataset_config],
     characters=CharactersConfig(
@@ -85,9 +85,10 @@ config = VitsConfig(
         ["Înainte de noiembrie douăzeci și doi, o mie nouă sute șaizeci și cinci, lumea era mai veselă."],
         ["Cele cinci sute cincizeci și cinci de ciuperci ciuruite pentru ciorbă"],
         [
-            "Duc în bac sac de dac, aud crac, o fi rac?", "O fi drac?",
-            "Face pac, aud mac, aud oac, nu e rac, nu-i gândac, nu e cuc, nu-i brotac, îl apuc, îl hurduc.",
-            "E tot drac."],
+            "Duc în bac sac de dac, aud crac, o fi rac? "
+            "O fi drac? Face pac, aud mac, aud oac, nu e rac, nu-i gândac, nu e cuc, nu-i brotac, îl apuc, îl hurduc. "
+            "E tot drac."
+        ],
         [
             "Unilateralitatea colocviilor desolidarizează conștinciozitatea energeticienilor care manifestă o "
             "imperturbabilitate indiscriptibilă în locul nabucodonosorienei ireproșabilități."
@@ -101,12 +102,12 @@ config = VitsConfig(
             "fuflendi-fluflendărească pe mierlița fuflendița fuflendi-fuflendărița"
         ],
         [
-            "Înțeleg că dorești să vorbești cu un operator uman.",
+            "Înțeleg că dorești să vorbești cu un operator uman. "
             "Dar te rog hai să încercăm să o rezolvăm împreună, că mă scot ăștia din priză dacă nu."
         ],
         ["Apăsați tasta doi pentru a afla promoțiile pe care vi le-am pregătit."],
         [
-            'Sunteți in căutarea unui smartphone?',
+            'Sunteți in căutarea unui smartphone? '
             'Descoperiți în magazinele noastre ofertele promoționale special pentru dumneavoastră.'
         ]
     ],
@@ -120,12 +121,18 @@ train_samples, eval_samples = load_tts_samples(dataset_config, eval_split=True)
 meta_data = train_samples + eval_samples
 
 # init model
-model = Vits(config, speaker_manager=SpeakerManager(data_items=meta_data))
+model = Vits(config, speaker_manager=SpeakerManager(
+    # data_items=meta_data,
+    speaker_id_file_path=os.path.join('/mnt/FastData/dl_workspace/ws_other/voxbox/checkpoints/vits_ft_delia_5/speakers.json')
+))
+# speaker_manager.set_speaker_ids_from_data(train_samples + eval_samples)
+# config.model_args.num_speakers = speaker_manager.num_speakers
 
 # init the trainer and 🚀
 trainer = Trainer(
-    config,
-    output_path,
+    args=TrainingArgs(),
+    config=config,
+    output_path=output_path,
     model=model,
     train_samples=train_samples,
     eval_samples=eval_samples,
