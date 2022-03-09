@@ -45,7 +45,10 @@ def remove_aux_symbols(text):
 
 def replace_symbols(text, lang="en"):
     text = text.replace(";", ",")
-    text = text.replace("-", " ")
+
+    if lang != "ro":
+        text = text.replace("-", " ")
+
     text = text.replace(":", ",")
     if lang == "en":
         text = text.replace("&", " and ")
@@ -53,6 +56,8 @@ def replace_symbols(text, lang="en"):
         text = text.replace("&", " et ")
     elif lang == "pt":
         text = text.replace("&", " e ")
+    elif lang == "ro":
+        text = text.replace("&", " și ")
     return text
 
 
@@ -140,6 +145,15 @@ def multilingual_cleaners(text):
     """Pipeline for multilingual text"""
     text = lowercase(text)
     text = replace_symbols(text, lang=None)
+    text = remove_aux_symbols(text)
+    text = collapse_whitespace(text)
+    return text
+
+
+def romanian_cleaners(text):
+    """Pipeline for romanian text"""
+    text = lowercase(text)
+    text = replace_symbols(text, lang="ro")
     text = remove_aux_symbols(text)
     text = collapse_whitespace(text)
     return text

@@ -17,7 +17,7 @@ transcripts_fld = "/mnt/FastData/dl_workspace/ws_other/voxbox/datasets/transcrip
 speakers_config_path = "/mnt/FastData/dl_workspace/ws_other/voxbox/datasets/speakers_config.json"
 dataset_config = BaseDatasetConfig(
     name="voxbox",
-    meta_file_train=f"{transcripts_fld}/transcripts_train_sampleds.txt",
+    meta_file_train=f"{transcripts_fld}/metadata_train.txt",
     meta_file_val=f"{transcripts_fld}/metadata_test.txt",
     path=wavs_fld, language="ro"
 )
@@ -44,12 +44,12 @@ config = VitsConfig(
     batch_size=10,
     eval_batch_size=12,
     batch_group_size=5,
-    num_loader_workers=6,
-    num_eval_loader_workers=2,
+    num_loader_workers=1,
+    num_eval_loader_workers=1,
     run_eval=True,
     test_delay_epochs=-1,
     epochs=200,
-    text_cleaner="multilingual_cleaners",
+    text_cleaner="romanian_cleaners",
     use_phonemes=False,
     phoneme_language="ro",
     phoneme_cache_path=os.path.join(output_path, "phoneme_cache"),

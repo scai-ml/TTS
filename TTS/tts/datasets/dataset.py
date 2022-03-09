@@ -326,9 +326,10 @@ class TTSDataset(Dataset):
         sorted_idxs = self.sort_by_length(samples)
 
         if self.start_by_longest:
-            longest_idxs = sorted_idxs[-1]
-            sorted_idxs[-1] = sorted_idxs[0]
-            sorted_idxs[0] = longest_idxs
+            sorted_idxs = sorted_idxs[::-1]
+            # longest_idxs = sorted_idxs[-1]
+            # sorted_idxs[-1] = sorted_idxs[0]
+            # sorted_idxs[0] = longest_idxs
 
         samples = self._select_samples_by_idx(sorted_idxs, samples)
 

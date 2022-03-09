@@ -28,6 +28,7 @@ def remove_silence(filepath):
     flag = False
     # create the output wave
     if num_segments != 0:
+
         for i, segment in reversed(list(enumerate(segments))):
             if i >= 1:
                 if not flag:
@@ -39,6 +40,8 @@ def remove_silence(filepath):
                 if flag:
                     segment = segment + concat_segment
                 # print("Saving: ", output_path)
+                if abs(len(audio) - len(segment)) > 8000:
+                    print(len(audio), len(segment), len(segments), filepath)
                 write_wave(output_path, segment, sample_rate)
                 return
     else:

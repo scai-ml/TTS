@@ -114,13 +114,12 @@ def mailabs(root_path, meta_files=None, ignored_speakers=None):
  clean_text = clean_text.replace("Ţ", "Ț")
  clean_text = clean_text.replace("ş", "ș")
  clean_text = clean_text.replace("ţ", "ț")
- diacritice : ABCDEFGHIJKLMNOPQRSTUVWXYZÂÎĂȘabcdefghijklmnopqrstuvwxyzâîăș
+ diacritice : ABCDEFGHIJKLMNOPQRSTUVWXYZÂÎĂȘȚabcdefghijklmnopqrstuvwxyzâîășț
 '''
 
 
-def voxbox(root_path, meta_file, **kwargs):  # pylint: disable=unused-argument
-    """Normalizes the LJSpeech meta data file to TTS format
-    https://keithito.com/LJ-Speech-Dataset/"""
+def voxbox(root_path, meta_file, ignored_speakers=None, **kwargs):  # pylint: disable=unused-argument
+    used_speakers = kwargs.get("used_speakers") or []
     txt_file = os.path.join(root_path, meta_file)
     items = []
     with open(txt_file, "r", encoding="utf-8") as ttf:
@@ -130,7 +129,11 @@ def voxbox(root_path, meta_file, **kwargs):  # pylint: disable=unused-argument
             text = cols[1].replace("ş", "ș").replace("ţ", "ț").replace("Ş", "Ș").replace("Ţ", "Ț")
             text = re.sub(r' +', ' ', text)
             speaker_name = cols[2].rstrip("\n")
-            items.append([text, wav_file, speaker_name])
+            if isinstance(used_speakers, list) and speaker_name not in used_speakers:
+                continue
+            if isinstance(ignored_speakers, list) and speaker_name in ignored_speakers:
+                continue
+            items.append({"text": text, "audio_file": wav_file, "speaker_name": speaker_name})
     return items
 
 
