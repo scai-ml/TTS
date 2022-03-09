@@ -1,16 +1,13 @@
 import os
-from typing import List
 
-from dataclasses import dataclass
+from trainer import Trainer, TrainerArgs
 
 from TTS.config.shared_configs import BaseAudioConfig
-from trainer import Trainer, TrainerArgs
 from TTS.tts.configs.shared_configs import BaseDatasetConfig, CharactersConfig
 from TTS.tts.configs.vits_config import VitsConfig
 from TTS.tts.datasets import load_tts_samples
-from TTS.tts.models.vits import Vits, VitsArgs
-from TTS.tts.utils.speakers import SpeakerManager
-from TTS.tts.utils.text import TTSTokenizer
+from TTS.tts.models.vits import Vits
+from TTS.tts.utils.text.tokenizer import TTSTokenizer
 from TTS.utils.audio import AudioProcessor
 from TTS.config import RoDatasetConfig
 
@@ -27,8 +24,9 @@ dataset_config = RoDatasetConfig(
     path=wavs_fld,
     language="ro",
     ignored_speakers=["tss"],
-    used_speakers=["adr", "mara", "ele", "sgs", "pmm", "pss", "fds", "eme", "cau"]
+    used_speakers=["mara"]
 )
+
 audio_config = BaseAudioConfig(
     sample_rate=16000,
     win_length=1024,
@@ -38,52 +36,41 @@ audio_config = BaseAudioConfig(
     ref_level_db=20,
     log_func="np.log",
     do_trim_silence=False,
-    trim_db=23.0,
+    trim_db=45,
     mel_fmin=0,
     mel_fmax=None,
     spec_gain=1.0,
     signal_norm=False,
     do_amp_to_db_linear=False,
-    resample=False,
-)
-
-vitsArgs = VitsArgs(
-    use_language_embedding=False,
-    use_speaker_embedding=True,
-    use_sdp=True,
-    spec_segment_size=32
 )
 
 config = VitsConfig(
-    model_args=vitsArgs,
     audio=audio_config,
-    run_name="vits_voxbox",
-    use_speaker_embedding=True,
+    run_name="vits_mara",
     batch_size=16,
     eval_batch_size=16,
-    batch_group_size=10,
-    start_by_longest=False,
+    batch_group_size=5,
     num_loader_workers=4,
     num_eval_loader_workers=4,
     run_eval=True,
     test_delay_epochs=-1,
+    lr_disc=0.0001,
+    lr_gen=0.0001,
+    lr=0.001,
     epochs=100,
     text_cleaner="romanian_cleaners",
     use_phonemes=False,
-    lr_disc=0.00005,
-    lr_gen=0.00005,
-    lr=0.0005,
+    phoneme_language="ro",
     phoneme_cache_path=os.path.join(output_path, "phoneme_cache"),
-    compute_input_seq_cache=True,True
+    compute_input_seq_cache=True,
     print_step=25,
-    print_eval=False,
-    mixed_precision=True,
-    sort_by_audio_len=True,
+    print_eval=True,
     min_audio_len=8000,
     max_audio_len=180000,
+    mixed_precision=True,
     output_path=output_path,
     datasets=[dataset_config],
-    characters=CharactersConfig(
+     characters=CharactersConfig(
         pad="<PAD>",
         eos="<EOS>",
         bos="<BOS>",
@@ -126,25 +113,27 @@ config = VitsConfig(
             'Descoperiți în magazinele noastre ofertele promoționale special pentru dumneavoastră.'
         ]
     ],
-
 )
 
-# init audio processor
-ap = AudioProcessor(**config.audio.to_dict())
+# INITIALIZE THE AUDIO PROCESSOR
+# Audio processor is used for feature extraction and audio I/O.
+# It mainly serves to the dataloader and the training loggers.
+ap = AudioProcessor.init_from_config(config)
 
+# INITIALIZE THE TOKENIZER
+# Tokenizer is used to convert text to sequences of token IDs.
+# config is updated with the default characters if not defined in the config.
 tokenizer, config = TTSTokenizer.init_from_config(config)
 
-# load training samples
+# LOAD DATA SAMPLES
+# Each sample is a list of ```[text, audio_file_path, speaker_name]```
+# You can define your custom sample loader returning the list of samples.
+# Or define your custom formatter and pass it to the `load_tts_samples`.
+# Check `TTS.tts.datasets.load_tts_samples` for more details.
 train_samples, eval_samples = load_tts_samples(dataset_config, eval_split=True)
 
-# init speaker manager for multi-speaker training
-# it maps speaker-id to speaker-name in the model and data-loader
-speaker_manager = SpeakerManager()
-speaker_manager.set_speaker_ids_from_data(train_samples + eval_samples)
-config.model_args.num_speakers = speaker_manager.num_speakers
-
 # init model
-model = Vits(config, ap, tokenizer, speaker_manager)
+model = Vits(config, ap, tokenizer, speaker_manager=None)
 
 # init the trainer and 🚀
 trainer = Trainer(

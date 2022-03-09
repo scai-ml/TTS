@@ -259,3 +259,7 @@ class BaseTrainingConfig(TrainerConfig):
     num_eval_loader_workers: int = 0
     use_noise_augment: bool = False
     use_language_weighted_sampler: bool = False
+
+@dataclass
+class RoDatasetConfig(BaseDatasetConfig):
+    used_speakers: List[str] = None
