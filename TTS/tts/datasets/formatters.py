@@ -129,7 +129,7 @@ def voxbox(root_path, meta_file, ignored_speakers=None, **kwargs):  # pylint: di
             text = cols[1].replace("ş", "ș").replace("ţ", "ț").replace("Ş", "Ș").replace("Ţ", "Ț")
             text = re.sub(r' +', ' ', text)
             speaker_name = cols[2].rstrip("\n")
-            if isinstance(used_speakers, list) and speaker_name not in used_speakers:
+            if isinstance(used_speakers, list) and len(used_speakers) > 0 and speaker_name not in used_speakers:
                 continue
             if isinstance(ignored_speakers, list) and speaker_name in ignored_speakers:
                 continue
